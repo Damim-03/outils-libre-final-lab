@@ -1,5 +1,10 @@
 plugins {
     id 'java'
+    id 'application'
+}
+
+application {
+    mainClass = 'pricing.Main'
 }
 
 repositories {
@@ -8,10 +13,17 @@ repositories {
 
 dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.0'
 }
 
 test {
     useJUnitPlatform()
+}
+
+java {
+    sourceCompatibility = '11'
+    targetCompatibility = '11'
 }
