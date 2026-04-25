@@ -1,57 +1,82 @@
 """
-Integration tests for the Pricing Engine
-Tests the Java application by running Gradle as a subprocess
+Integration tests for the Pricing Engine.
+These tests run the Java application as a subprocess and verify actual outputs.
 """
 
 import subprocess
 import sys
 import os
+import re
 
 # المسار الجذري للمشروع
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def run_gradle_test():
-    """تشغيل JUnit tests عبر Gradle"""
+def run_pricing_engine(prices, quantities, customer_type, discount_code):
+    """
+    تشغيل Java application وإرجاع المخرجات.
+    """
     gradlew = "gradlew.bat" if sys.platform == "win32" else "./gradlew"
     gradlew_path = os.path.join(PROJECT_ROOT, gradlew)
     
+    args = f"{prices} {quantities} {customer_type} {discount_code}"
+    
     result = subprocess.run(
-        [gradlew_path, "test"],
+        [gradlew_path, "run", f"--args={args}", "-q"],
         cwd=PROJECT_ROOT,
         capture_output=True,
         text=True,
         shell=True
     )
-    return result
+    
+    return result.stdout + result.stderr
 
+
+def parse_breakdown(output):
+    """
+    استخراج القيم من output:
+    Subtotal: 500.00, Discount: 0.00, Tax: 95.00, Final: 595.00
+    """
+    pattern = r"Subtotal:\s*([\d.]+).*?Discount:\s*([\d.]+).*?Tax:\s*([\d.]+).*?Final:\s*([\d.]+)"
+    match = re.search(pattern, output)
+    
+    if not match:
+        raise ValueError(f"Could not parse output:\n{output}")
+    
+    return {
+        "subtotal": float(match.group(1)),
+        "discount": float(match.group(2)),
+        "tax": float(match.group(3)),
+        "final": float(match.group(4)),
+    }
+
+
+def assert_close(actual, expected, tolerance=0.01, label=""):
+    """مقارنة بدقة معينة."""
+    assert abs(actual - expected) < tolerance, \
+        f"{label}: expected {expected}, got {actual}"
+
+
+# =============================
+# 1. اختبارات بنية المشروع
+# =============================
 
 def test_project_structure():
-    """التأكد من وجود الملفات الأساسية"""
+    """التأكد من وجود الملفات الأساسية."""
     print("📁 Checking project structure...")
     
     required_files = [
-        # ملفات Build
         "build.gradle",
         "settings.gradle",
-        
-        # الـ Main classes
+        "src/main/java/pricing/Main.java",
         "src/main/java/pricing/PricingEngine.java",
         "src/main/java/pricing/PricingEngine_bad.java",
-        
-        # الـ Enums
         "src/main/java/pricing/CustomerType.java",
         "src/main/java/pricing/DiscountCode.java",
-        
-        # Result class
         "src/main/java/pricing/PriceBreakdown.java",
-        
-        # الـ Services (الجديدة)
         "src/main/java/pricing/OrderCalculator.java",
         "src/main/java/pricing/DiscountService.java",
         "src/main/java/pricing/TaxService.java",
-        
-        # ملفات الاختبارات
         "src/test/java/pricing/PricingEngineTest.java",
         "src/test/java/pricing/OrderCalculatorTest.java",
         "src/test/java/pricing/DiscountServiceTest.java",
@@ -71,96 +96,153 @@ def test_project_structure():
     print("✅ Project structure is correct\n")
 
 
-def test_service_pattern_implementation():
-    """التأكد من تطبيق Service Pattern"""
-    print("🏗️ Verifying Service Pattern implementation...")
-    
-    services = {
-        "OrderCalculator": "src/main/java/pricing/OrderCalculator.java",
-        "DiscountService": "src/main/java/pricing/DiscountService.java",
-        "TaxService": "src/main/java/pricing/TaxService.java",
-    }
-    
-    for service_name, path in services.items():
-        full_path = os.path.join(PROJECT_ROOT, path)
-        with open(full_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-            assert f"class {service_name}" in content, f"{service_name} class not found in {path}"
-            print(f"  ✓ {service_name} is properly defined")
-    
-    print("✅ Service Pattern is implemented correctly\n")
+# =============================
+# 2. اختبارات JUnit
+# =============================
 
-
-def test_enums_used():
-    """التأكد من استخدام Enums بدلاً من Strings"""
-    print("🔤 Verifying Enums usage...")
-    
-    pricing_engine = os.path.join(PROJECT_ROOT, "src/main/java/pricing/PricingEngine.java")
-    with open(pricing_engine, 'r', encoding='utf-8') as f:
-        content = f.read()
-        assert "CustomerType" in content, "PricingEngine should use CustomerType enum"
-        assert "DiscountCode" in content, "PricingEngine should use DiscountCode enum"
-        print("  ✓ PricingEngine uses CustomerType enum")
-        print("  ✓ PricingEngine uses DiscountCode enum")
-    
-    print("✅ Enums are used properly\n")
-
-
-def test_gradle_build_succeeds():
-    """التأكد من أن المشروع يُبنى بنجاح"""
-    print("🔨 Testing Gradle build...")
-    result = run_gradle_test()
-    
-    if result.returncode != 0:
-        print(f"STDOUT:\n{result.stdout}")
-        print(f"STDERR:\n{result.stderr}")
-    
-    assert result.returncode == 0, "Gradle build failed"
-    print("✅ Gradle build succeeded\n")
-
-
-def test_all_junit_tests_pass():
-    """التأكد من نجاح كل JUnit tests"""
+def test_junit_tests_pass():
+    """تشغيل JUnit tests والتأكد من نجاحها."""
     print("🧪 Running JUnit tests via Gradle...")
-    result = run_gradle_test()
+    
+    gradlew = "gradlew.bat" if sys.platform == "win32" else "./gradlew"
+    gradlew_path = os.path.join(PROJECT_ROOT, gradlew)
+    
+    result = subprocess.run(
+        [gradlew_path, "test"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        shell=True
+    )
     
     output = result.stdout + result.stderr
-    
-    assert "BUILD SUCCESSFUL" in output, f"Tests failed:\n{output}"
+    assert "BUILD SUCCESSFUL" in output, f"JUnit tests failed:\n{output}"
     assert "FAILED" not in output, f"Some tests failed:\n{output}"
     
     print("✅ All JUnit tests passed\n")
 
 
-def test_gitignore_exists():
-    """التأكد من وجود .gitignore"""
-    print("📝 Checking .gitignore...")
-    gitignore_path = os.path.join(PROJECT_ROOT, ".gitignore")
-    assert os.path.exists(gitignore_path), ".gitignore is missing"
-    print("✅ .gitignore exists\n")
+# =============================
+# 3. اختبارات تكاملية حقيقية (تشغيل Java)
+# =============================
+
+def test_regular_customer_no_discount():
+    """REGULAR customer, no discount: 500 + 19% tax = 595"""
+    print("🧪 Test: Regular customer, no discount...")
+    output = run_pricing_engine("[100.0,200.0]", "[1,2]", "REGULAR", "NONE")
+    breakdown = parse_breakdown(output)
+    
+    assert_close(breakdown["subtotal"], 500.0, label="subtotal")
+    assert_close(breakdown["discount"], 0.0, label="discount")
+    assert_close(breakdown["tax"], 95.0, label="tax")
+    assert_close(breakdown["final"], 595.0, label="final")
+    
+    print(f"  ✓ Subtotal: {breakdown['subtotal']}")
+    print(f"  ✓ Discount: {breakdown['discount']}")
+    print(f"  ✓ Tax: {breakdown['tax']}")
+    print(f"  ✓ Final: {breakdown['final']}")
+    print("✅ Test passed\n")
 
 
-def test_readme_exists():
-    """التأكد من وجود README.md"""
-    print("📖 Checking README.md...")
-    readme_path = os.path.join(PROJECT_ROOT, "README.md")
-    assert os.path.exists(readme_path), "README.md is missing"
-    print("✅ README.md exists\n")
+def test_save10_discount():
+    """REGULAR + SAVE10: 100 - 10 = 90, +19% tax = 107.1"""
+    print("🧪 Test: SAVE10 discount...")
+    output = run_pricing_engine("[100.0]", "[1]", "REGULAR", "SAVE10")
+    breakdown = parse_breakdown(output)
+    
+    assert_close(breakdown["subtotal"], 100.0, label="subtotal")
+    assert_close(breakdown["discount"], 10.0, label="discount")
+    assert_close(breakdown["final"], 107.1, label="final")
+    
+    print(f"  ✓ Discount: {breakdown['discount']}")
+    print(f"  ✓ Final: {breakdown['final']}")
+    print("✅ Test passed\n")
 
+
+def test_vip_customer():
+    """VIP customer (5% extra): 100 - 5 = 95, +19% tax = 113.05"""
+    print("🧪 Test: VIP customer no code...")
+    output = run_pricing_engine("[100.0]", "[1]", "VIP", "NONE")
+    breakdown = parse_breakdown(output)
+    
+    assert_close(breakdown["discount"], 5.0, label="discount")
+    assert_close(breakdown["final"], 113.05, label="final")
+    
+    print(f"  ✓ VIP Discount: {breakdown['discount']}")
+    print(f"  ✓ Final: {breakdown['final']}")
+    print("✅ Test passed\n")
+
+
+def test_vip_with_save20():
+    """VIP + SAVE20: 100 - 25 = 75, +19% tax = 89.25"""
+    print("🧪 Test: VIP + SAVE20...")
+    output = run_pricing_engine("[100.0]", "[1]", "VIP", "SAVE20")
+    breakdown = parse_breakdown(output)
+    
+    assert_close(breakdown["discount"], 25.0, label="discount")
+    assert_close(breakdown["final"], 89.25, label="final")
+    
+    print(f"  ✓ Combined Discount: {breakdown['discount']}")
+    print(f"  ✓ Final: {breakdown['final']}")
+    print("✅ Test passed\n")
+
+
+def test_vip_with_save10_multiple_items():
+    """نفس مثال Demo: VIP + SAVE10 + multiple items"""
+    print("🧪 Test: VIP + SAVE10 + multiple items...")
+    output = run_pricing_engine("[100.0,50.0]", "[2,1]", "VIP", "SAVE10")
+    breakdown = parse_breakdown(output)
+    
+    assert_close(breakdown["subtotal"], 250.0, label="subtotal")
+    assert_close(breakdown["discount"], 37.5, label="discount")
+    assert_close(breakdown["tax"], 40.38, label="tax")
+    assert_close(breakdown["final"], 252.88, label="final")
+    
+    print(f"  ✓ All values match expected\n")
+    print("✅ Test passed\n")
+
+
+def test_output_contains_all_fields():
+    """التأكد من أن المخرجات تحتوي على كل الحقول المطلوبة."""
+    print("🧪 Test: Output completeness...")
+    output = run_pricing_engine("[200.0]", "[1]", "REGULAR", "SAVE10")
+    
+    assert "Subtotal" in output, "Output missing 'Subtotal'"
+    assert "Discount" in output, "Output missing 'Discount'"
+    assert "Tax" in output, "Output missing 'Tax'"
+    assert "Final" in output, "Output missing 'Final'"
+    
+    print("  ✓ Contains: Subtotal, Discount, Tax, Final")
+    print("✅ Test passed\n")
+
+
+# =============================
+# Runner
+# =============================
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("🚀 Running Integration Tests for Pricing Engine")
+    print("🚀 Running Real Integration Tests for Pricing Engine")
     print("=" * 60 + "\n")
     
     try:
+        # 1. فحص الهيكل
         test_project_structure()
-        test_service_pattern_implementation()
-        test_enums_used()
-        test_gitignore_exists()
-        test_readme_exists()
-        test_gradle_build_succeeds()
-        test_all_junit_tests_pass()
+        
+        # 2. تشغيل JUnit tests
+        test_junit_tests_pass()
+        
+        print("=" * 60)
+        print("📋 Running CLI integration tests (calling real Java)...")
+        print("=" * 60 + "\n")
+        
+        # 3. اختبارات تكاملية حقيقية
+        test_regular_customer_no_discount()
+        test_save10_discount()
+        test_vip_customer()
+        test_vip_with_save20()
+        test_vip_with_save10_multiple_items()
+        test_output_contains_all_fields()
         
         print("=" * 60)
         print("🎉 All integration tests passed successfully!")
@@ -171,4 +253,6 @@ if __name__ == "__main__":
         sys.exit(1)
     except Exception as e:
         print(f"\n💥 Unexpected error: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
