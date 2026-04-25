@@ -2,14 +2,8 @@ package pricing;
 
 import java.util.List;
 
-/**
- * Service responsible for calculating order subtotal
- */
 public class OrderCalculator {
     
-    /**
-     * Calculates the subtotal by multiplying each price by its quantity
-     */
     public double calculateSubtotal(List<Double> prices, List<Integer> quantities) {
         validateInputs(prices, quantities);
         

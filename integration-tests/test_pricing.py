@@ -8,7 +8,6 @@ import sys
 import os
 import re
 
-# المسار الجذري للمشروع
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -57,10 +56,6 @@ def assert_close(actual, expected, tolerance=0.01, label=""):
         f"{label}: expected {expected}, got {actual}"
 
 
-# =============================
-# 1. اختبارات بنية المشروع
-# =============================
-
 def test_project_structure():
     """التأكد من وجود الملفات الأساسية."""
     print("📁 Checking project structure...")
@@ -96,10 +91,6 @@ def test_project_structure():
     print("✅ Project structure is correct\n")
 
 
-# =============================
-# 2. اختبارات JUnit
-# =============================
-
 def test_junit_tests_pass():
     """تشغيل JUnit tests والتأكد من نجاحها."""
     print("🧪 Running JUnit tests via Gradle...")
@@ -120,11 +111,6 @@ def test_junit_tests_pass():
     assert "FAILED" not in output, f"Some tests failed:\n{output}"
     
     print("✅ All JUnit tests passed\n")
-
-
-# =============================
-# 3. اختبارات تكاملية حقيقية (تشغيل Java)
-# =============================
 
 def test_regular_customer_no_discount():
     """REGULAR customer, no discount: 500 + 19% tax = 595"""
@@ -215,28 +201,22 @@ def test_output_contains_all_fields():
     print("  ✓ Contains: Subtotal, Discount, Tax, Final")
     print("✅ Test passed\n")
 
-
-# =============================
-# Runner
-# =============================
-
 if __name__ == "__main__":
     print("=" * 60)
     print("🚀 Running Real Integration Tests for Pricing Engine")
     print("=" * 60 + "\n")
     
     try:
-        # 1. فحص الهيكل
+        
         test_project_structure()
         
-        # 2. تشغيل JUnit tests
         test_junit_tests_pass()
         
         print("=" * 60)
         print("📋 Running CLI integration tests (calling real Java)...")
         print("=" * 60 + "\n")
         
-        # 3. اختبارات تكاملية حقيقية
+        
         test_regular_customer_no_discount()
         test_save10_discount()
         test_vip_customer()

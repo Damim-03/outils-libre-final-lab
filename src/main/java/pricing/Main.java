@@ -19,9 +19,6 @@ public class Main {
         }
     }
 
-    /**
-     * Runs the application in CLI mode using arguments.
-     */
     private static void runCliMode(String[] args, PricingEngine engine) {
         try {
             List<Double> prices = parsePrices(args[0]);
@@ -37,9 +34,6 @@ public class Main {
         }
     }
 
-    /**
-     * Runs the application in demo mode with sample data.
-     */
     private static void runDemoMode(PricingEngine engine) {
         System.out.println("=== Pricing Engine Demo ===");
         System.out.println("Sample Order: 2x $100 + 1x $50, VIP customer, SAVE10 code\n");
@@ -54,9 +48,6 @@ public class Main {
         System.out.println(result);
     }
 
-    /**
-     * Parses a string like "[100.0,200.0]" or "100.0,200.0" into a List<Double>.
-     */
     private static List<Double> parsePrices(String raw) {
         String cleaned = raw.replaceAll("[\\[\\]\\s]", "");
         if (cleaned.isEmpty()) {
@@ -67,9 +58,6 @@ public class Main {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Parses a string like "[1,2,3]" or "1,2,3" into a List<Integer>.
-     */
     private static List<Integer> parseQuantities(String raw) {
         String cleaned = raw.replaceAll("[\\[\\]\\s]", "");
         if (cleaned.isEmpty()) {
@@ -80,9 +68,6 @@ public class Main {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Parses a string into CustomerType enum.
-     */
     private static CustomerType parseCustomerType(String raw) {
         try {
             return CustomerType.valueOf(raw.toUpperCase());
@@ -93,10 +78,6 @@ public class Main {
         }
     }
 
-    /**
-     * Parses a string into DiscountCode enum.
-     * Accepts "null" or "NONE" for no discount.
-     */
     private static DiscountCode parseDiscountCode(String raw) {
         if (raw == null || "null".equalsIgnoreCase(raw) || raw.isEmpty()) {
             return DiscountCode.NONE;
@@ -110,9 +91,6 @@ public class Main {
         }
     }
 
-    /**
-     * Prints usage instructions.
-     */
     private static void printUsage() {
         System.out.println("Usage:");
         System.out.println("  Demo mode:  java -jar pricing-engine.jar");
