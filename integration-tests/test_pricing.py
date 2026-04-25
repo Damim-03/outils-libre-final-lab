@@ -31,13 +31,31 @@ def test_project_structure():
     print("📁 Checking project structure...")
     
     required_files = [
+        # ملفات Build
         "build.gradle",
         "settings.gradle",
+        
+        # الـ Main classes
         "src/main/java/pricing/PricingEngine.java",
+        "src/main/java/pricing/PricingEngine_bad.java",
+        
+        # الـ Enums
         "src/main/java/pricing/CustomerType.java",
         "src/main/java/pricing/DiscountCode.java",
+        
+        # Result class
         "src/main/java/pricing/PriceBreakdown.java",
+        
+        # الـ Services (الجديدة)
+        "src/main/java/pricing/OrderCalculator.java",
+        "src/main/java/pricing/DiscountService.java",
+        "src/main/java/pricing/TaxService.java",
+        
+        # ملفات الاختبارات
         "src/test/java/pricing/PricingEngineTest.java",
+        "src/test/java/pricing/OrderCalculatorTest.java",
+        "src/test/java/pricing/DiscountServiceTest.java",
+        "src/test/java/pricing/TaxServiceTest.java",
     ]
     
     missing = []
@@ -51,6 +69,41 @@ def test_project_structure():
     
     assert not missing, f"Missing files: {missing}"
     print("✅ Project structure is correct\n")
+
+
+def test_service_pattern_implementation():
+    """التأكد من تطبيق Service Pattern"""
+    print("🏗️ Verifying Service Pattern implementation...")
+    
+    services = {
+        "OrderCalculator": "src/main/java/pricing/OrderCalculator.java",
+        "DiscountService": "src/main/java/pricing/DiscountService.java",
+        "TaxService": "src/main/java/pricing/TaxService.java",
+    }
+    
+    for service_name, path in services.items():
+        full_path = os.path.join(PROJECT_ROOT, path)
+        with open(full_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            assert f"class {service_name}" in content, f"{service_name} class not found in {path}"
+            print(f"  ✓ {service_name} is properly defined")
+    
+    print("✅ Service Pattern is implemented correctly\n")
+
+
+def test_enums_used():
+    """التأكد من استخدام Enums بدلاً من Strings"""
+    print("🔤 Verifying Enums usage...")
+    
+    pricing_engine = os.path.join(PROJECT_ROOT, "src/main/java/pricing/PricingEngine.java")
+    with open(pricing_engine, 'r', encoding='utf-8') as f:
+        content = f.read()
+        assert "CustomerType" in content, "PricingEngine should use CustomerType enum"
+        assert "DiscountCode" in content, "PricingEngine should use DiscountCode enum"
+        print("  ✓ PricingEngine uses CustomerType enum")
+        print("  ✓ PricingEngine uses DiscountCode enum")
+    
+    print("✅ Enums are used properly\n")
 
 
 def test_gradle_build_succeeds():
@@ -102,6 +155,8 @@ if __name__ == "__main__":
     
     try:
         test_project_structure()
+        test_service_pattern_implementation()
+        test_enums_used()
         test_gitignore_exists()
         test_readme_exists()
         test_gradle_build_succeeds()
