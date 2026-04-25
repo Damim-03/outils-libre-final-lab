@@ -16,9 +16,6 @@ public class TaxService {
         this.taxRate = taxRate;
     }
     
-    /**
-     * Calculates tax on the given amount
-     */
     public double calculateTax(double amount) {
         if (amount < 0) {
             throw new IllegalArgumentException("Amount cannot be negative");

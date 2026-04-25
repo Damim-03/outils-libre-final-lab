@@ -2,7 +2,6 @@ package pricing;
 
 import java.util.List;
 
-// BAD DESIGN - everything in one class, no separation of concerns
 public class PricingEngine_bad {
 
     public double calc(List<Double> prices, List<Integer> quantities,
