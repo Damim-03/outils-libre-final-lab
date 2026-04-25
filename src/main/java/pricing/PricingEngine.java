@@ -2,25 +2,42 @@ package pricing;
 
 import java.util.List;
 
-// BAD DESIGN - everything in one class, no separation of concerns
 public class PricingEngine {
-
-    public double calc(List<Double> prices, List<Integer> quantities,
-                       String customerType, String discountCode) {
-        double sub = 0;
-        for (int i = 0; i < prices.size(); i++) {
-            sub += prices.get(i) * quantities.get(i);
+    private static final double TAX_RATE = 0.19;
+    
+    public PriceBreakdown calculate(List<Double> prices, List<Integer> quantities,
+                                     CustomerType customerType, DiscountCode discountCode) {
+        validateInputs(prices, quantities);
+        
+        double subtotal = calculateSubtotal(prices, quantities);
+        double discount = calculateDiscount(subtotal, customerType, discountCode);
+        double afterDiscount = subtotal - discount;
+        double tax = afterDiscount * TAX_RATE;
+        double finalPrice = afterDiscount + tax;
+        
+        return new PriceBreakdown(subtotal, discount, tax, finalPrice);
+    }
+    
+    private void validateInputs(List<Double> prices, List<Integer> quantities) {
+        if (prices == null || quantities == null) {
+            throw new IllegalArgumentException("Prices and quantities cannot be null");
         }
-
-        double disc = 0;
-        if (discountCode.equals("SAVE10")) disc = sub * 0.10;
-        else if (discountCode.equals("SAVE20")) disc = sub * 0.20;
-
-        if (customerType.equals("VIP")) disc += sub * 0.05;
-
-        double afterDisc = sub - disc;
-        double tax = afterDisc * 0.19;
-        double total = afterDisc + tax;
-        return total;
+        if (prices.size() != quantities.size()) {
+            throw new IllegalArgumentException("Prices and quantities must have same size");
+        }
+    }
+    
+    private double calculateSubtotal(List<Double> prices, List<Integer> quantities) {
+        double subtotal = 0;
+        for (int i = 0; i < prices.size(); i++) {
+            subtotal += prices.get(i) * quantities.get(i);
+        }
+        return subtotal;
+    }
+    
+    private double calculateDiscount(double subtotal, CustomerType customerType, DiscountCode code) {
+        double discount = subtotal * code.getRate();
+        discount += subtotal * customerType.getExtraDiscount();
+        return discount;
     }
 }
